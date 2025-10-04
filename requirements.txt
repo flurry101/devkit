@@ -1,0 +1,13 @@
+# Core dependencies
+click>=8.0.0
+
+# AI integration
+google-generativeai>=0.3.0
+
+# Terminal colors
+colorama>=0.4.0
+
+# Development dependencies
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
