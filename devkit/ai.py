@@ -3,13 +3,17 @@ AI module for DevKit
 Handles all Gemini API interactions
 """
 
-import google.generativeai as genai
-from typing import Optional
-from .storage import get_api_key
+import os
+# Suppress gRPC warnings
+os.environ['GRPC_VERBOSITY'] = 'ERROR'
+os.environ['GLOG_minloglevel'] = '2'
 
 # issue: WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
 # E0000 00:00:1759587309.577481   62098 alts_credentials.cc:93] ALTS creds ignored. Not running on GCP and untrusted ALTS is not enabled.
-# TODO: need to fix the above
+
+import google.generativeai as genai
+from typing import Optional
+from .storage import get_api_key
 
 
 def get_client() -> Optional[genai.GenerativeModel]:

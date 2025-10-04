@@ -338,7 +338,10 @@ def snippet_run(name: str):
     command = data.get('command', '')
     click.echo(f"{Fore.BLUE}🚀 Running: {command}{Style.RESET_ALL}")
     
-    result = subprocess.run(command, shell=True)
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    output = result.stdout + result.stderr # Log to History
+    storage.log_command(command, output, result.returncode)
+    
     if result.returncode != 0:
         click.echo(f"{Fore.RED}❌ Command failed with exit code {result.returncode}{Style.RESET_ALL}")
     else:
@@ -409,7 +412,7 @@ def explain(command):
 # ============================================================================
 
 @cli.command()
-@click.option('--ai', is_flag=True, help='Use AI to generate commit message from diff')
+@click.option('--ai', 'ai_mode', is_flag=True, help='Use AI to generate commit message from diff')
 def commit(ai_mode):
     """Create a conventional commit message
     
