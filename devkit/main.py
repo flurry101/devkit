@@ -493,13 +493,17 @@ def explain(command):
 @cli.command()
 @click.option('--ai', 'ai_mode', is_flag=True, help='Use AI to generate commit message')
 @click.option('--edit', '-e', is_flag=True, help='Edit message before committing')
-def commit(ai_mode, edit):
+@click.option('--signoff', '-s', is_flag=True, help='Add Signed-off-by line')
+@click.option('--amend', is_flag=True, help='Amend the previous commit')
+@click.option('--no-verify', is_flag=True, help='Bypass pre-commit and commit-msg hooks')
+def commit(ai_mode, edit, signoff, amend, no_verify):
     """Create a conventional commit message with preview
     
     Examples:
-      devkit commit          # Interactive
-      devkit commit --ai     # AI-generated  
-      devkit commit --ai -e  # AI + edit
+      devkit commit              # Interactive
+      devkit commit --ai -s      # AI-generated with signoff  
+      devkit commit --ai -e      # AI + edit
+      devkit commit --amend      # Amend previous commit
     """
     import tempfile
     
@@ -564,7 +568,19 @@ def commit(ai_mode, edit):
         description = click.prompt("Description", type=str)
         
         commit_msg = f"{commit_type}({scope}): {description}" if scope else f"{commit_type}: {description}"
+        
+        # ... existing code for generating commit_msg ...
     
+    # Build git commit command with flags
+    git_cmd = ["git", "commit", "-m", commit_msg]
+    
+    if signoff:
+        git_cmd.append("--signoff")
+    if amend:
+        git_cmd.append("--amend")
+    if no_verify:
+        git_cmd.append("--no-verify")
+        
     # Preview
     click.echo(f"\n{Fore.CYAN}📋 Preview:{Style.RESET_ALL}")
     click.echo("=" * 70)
@@ -603,7 +619,7 @@ def commit(ai_mode, edit):
     # Confirm and commit
     if click.confirm(f"{Fore.GREEN}Proceed?{Style.RESET_ALL}", default=True):
         try:
-            subprocess.run(["git", "commit", "-m", commit_msg], check=True)
+            subprocess.run(git_cmd, check=True)
             click.echo(f"\n{Fore.GREEN}✅ Committed!{Style.RESET_ALL}")
             storage.log_command(f"git commit -m \"{commit_msg}\"", "Committed", 0)
         except subprocess.CalledProcessError as e:

@@ -83,6 +83,7 @@ docs/_build/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+*json
 
 # 
 devkit_cli.egg-info/
