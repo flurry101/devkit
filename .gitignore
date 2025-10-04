@@ -89,7 +89,6 @@ dmypy.json
 devkit_cli.egg-info/
 
 # markdown stuff
-CHANGELOG.md
 GEMINI_MIGRATION_SUMMARY.md
 IMPROVEMENTS_SUMMARY.md
 RELEASE_GUIDE.md
