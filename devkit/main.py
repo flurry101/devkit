@@ -28,6 +28,10 @@ from . import time_travel
 from . import rollback
 
 # Optional AI module
+
+from . import workspace
+from . import logs as log_analyzer
+
 try:
     from . import ai
     AI_AVAILABLE = True
@@ -348,6 +352,81 @@ def snippet_run(name: str):
         click.echo(f"{Fore.GREEN}✅ Command completed successfully{Style.RESET_ALL}")
 
 # ============================================================================
+# Project Workspace Commands
+# ============================================================================
+
+@cli.command()
+@click.option('--force', is_flag=True, help='Reinitialize if .devkit already exists')
+def init(force):
+    """Initialize DevKit project workspace
+    
+    Creates .devkit/ directory with project-specific config and snippets.
+    """
+    try:
+        project_root = workspace.find_project_root()
+        
+        if not project_root:
+            project_root = Path.cwd()
+            click.echo(f"{Fore.YELLOW}⚠️  No project markers found. Using current directory.{Style.RESET_ALL}")
+        
+        config = workspace.init_project_workspace(project_root, force=force)
+        
+        click.echo(f"\n{Fore.GREEN}✅ Initialized DevKit workspace!{Style.RESET_ALL}\n")
+        click.echo(f"Project: {config['project_name']}")
+        click.echo(f"Type: {config['project_type']}")
+        click.echo(f"Location: {project_root}/.devkit/\n")
+    
+    except FileExistsError as e:
+        click.echo(f"{Fore.YELLOW}⚠️  {e}{Style.RESET_ALL}")
+        click.echo(f"Use {Fore.CYAN}devkit init --force{Style.RESET_ALL} to reinitialize.")
+
+
+# ============================================================================
+# Log Analysis Commands
+# ============================================================================
+
+@cli.group()
+def logs():
+    """AI-powered log analysis and debugging"""
+    pass
+
+
+@logs.command('analyze')
+@click.argument('logfile', required=False)
+def logs_analyze(logfile):
+    """Analyze log file for errors and crashes
+    
+    Examples:
+      devkit logs analyze app.log
+      cat error.log | devkit logs analyze
+    """
+    try:
+        if logfile:
+            click.echo(f"{Fore.CYAN}📄 Reading: {logfile}{Style.RESET_ALL}\n")
+            log_content = log_analyzer.read_log_file(logfile)
+        else:
+            click.echo(f"{Fore.CYAN}📄 Reading from stdin...{Style.RESET_ALL}\n")
+            log_content = log_analyzer.read_stdin()
+        
+        if not log_content.strip():
+            click.echo(f"{Fore.RED}❌ Empty log{Style.RESET_ALL}")
+            return
+        
+        patterns = log_analyzer.extract_error_patterns(log_content)
+        context = workspace.get_project_context()
+        
+        click.echo(f"{Fore.CYAN}🤖 Analyzing with AI...{Style.RESET_ALL}\n")
+        analysis = log_analyzer.analyze_log_with_ai(log_content, context)
+        
+        output = log_analyzer.format_analysis_output(analysis, patterns)
+        click.echo(output)
+    
+    except RuntimeError as e:
+        click.echo(f"{Fore.RED}❌ {e}{Style.RESET_ALL}")
+    except Exception as e:
+        click.echo(f"{Fore.RED}❌ Analysis failed: {e}{Style.RESET_ALL}")
+        
+# ============================================================================
 # AI Commands
 # ============================================================================
 
@@ -412,6 +491,127 @@ def explain(command):
 # ============================================================================
 
 @cli.command()
+@click.option('--ai', 'ai_mode', is_flag=True, help='Use AI to generate commit message')
+@click.option('--edit', '-e', is_flag=True, help='Edit message before committing')
+def commit(ai_mode, edit):
+    """Create a conventional commit message with preview
+    
+    Examples:
+      devkit commit          # Interactive
+      devkit commit --ai     # AI-generated  
+      devkit commit --ai -e  # AI + edit
+    """
+    import tempfile
+    
+    # Check git repo
+    try:
+        subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True, check=True)
+    except subprocess.CalledProcessError:
+        click.echo(f"{Fore.RED}❌ Not in a git repository!{Style.RESET_ALL}")
+        return
+    
+    # Get staged files for preview
+    result = subprocess.run(["git", "diff", "--staged", "--name-status"], 
+                          capture_output=True, text=True)
+    staged_files = result.stdout.strip()
+    
+    if not staged_files:
+        click.echo(f"{Fore.YELLOW}⚠️  No staged changes.{Style.RESET_ALL}")
+        click.echo("Run 'git add <files>' first.\n")
+        return
+    
+    # Generate commit message
+    commit_msg = None
+    
+    if ai_mode:
+        click.echo(f"\n{Fore.CYAN}🤖 Generating commit message...{Style.RESET_ALL}\n")
+        
+        result = subprocess.run(["git", "diff", "--staged"], 
+                              capture_output=True, text=True, check=True)
+        diff = result.stdout
+        
+        if not diff:
+            click.echo(f"{Fore.RED}❌ No diff{Style.RESET_ALL}")
+            return
+        
+        commit_msg = ai.generate_commit_message(diff)
+        
+        if commit_msg.startswith("❌"):
+            click.echo(commit_msg)
+            return
+    else:
+        # Interactive mode
+        click.echo(f"\n{Fore.CYAN}📝 Conventional Commit Helper{Style.RESET_ALL}\n")
+        
+        types = {
+            '1': ('feat', '✨ New feature'),
+            '2': ('fix', '🐛 Bug fix'),
+            '3': ('docs', '📝 Documentation'),
+            '4': ('style', '💄 Code style'),
+            '5': ('refactor', '♻️  Refactoring'),
+            '6': ('test', '✅ Tests'),
+            '7': ('chore', '🔧 Maintenance')
+        }
+        
+        click.echo("Select type:")
+        for key, (value, desc) in types.items():
+            click.echo(f"  {key}. {value:10} - {desc}")
+        
+        type_choice = click.prompt("\nType", default='1')
+        commit_type = types.get(type_choice, types['1'])[0]
+        
+        scope = click.prompt("Scope (optional)", default="", show_default=False)
+        description = click.prompt("Description", type=str)
+        
+        commit_msg = f"{commit_type}({scope}): {description}" if scope else f"{commit_type}: {description}"
+    
+    # Preview
+    click.echo(f"\n{Fore.CYAN}📋 Preview:{Style.RESET_ALL}")
+    click.echo("=" * 70)
+    click.echo(f"{Fore.WHITE}Message: {commit_msg}{Style.RESET_ALL}\n")
+    click.echo(f"{Fore.YELLOW}Staged files:{Style.RESET_ALL}")
+    for line in staged_files.split('\n'):
+        if line:
+            parts = line.split('\t')
+            status = parts[0]
+            file = '\t'.join(parts[1:])
+            color = Fore.GREEN if status == 'A' else Fore.YELLOW if status == 'M' else Fore.RED
+            click.echo(f"  {color}{status}{Style.RESET_ALL} {file}")
+    click.echo("=" * 70 + "\n")
+    
+    # Edit option
+    if edit or click.confirm("Edit message?", default=False):
+        import os
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.txt', delete=False) as f:
+            f.write(commit_msg)
+            temp_path = f.name
+        
+        editor = os.environ.get('EDITOR', 'nano')
+        subprocess.run([editor, temp_path])
+        
+        with open(temp_path) as f:
+            commit_msg = f.read().strip()
+        
+        os.unlink(temp_path)
+        
+        if not commit_msg:
+            click.echo(f"{Fore.RED}❌ Empty message{Style.RESET_ALL}")
+            return
+        
+        click.echo(f"\n{Fore.CYAN}Updated: {commit_msg}{Style.RESET_ALL}\n")
+    
+    # Confirm and commit
+    if click.confirm(f"{Fore.GREEN}Proceed?{Style.RESET_ALL}", default=True):
+        try:
+            subprocess.run(["git", "commit", "-m", commit_msg], check=True)
+            click.echo(f"\n{Fore.GREEN}✅ Committed!{Style.RESET_ALL}")
+            storage.log_command(f"git commit -m \"{commit_msg}\"", "Committed", 0)
+        except subprocess.CalledProcessError as e:
+            click.echo(f"{Fore.RED}❌ Failed: {e}{Style.RESET_ALL}")
+    else:
+        click.echo(f"{Fore.YELLOW}❌ Cancelled{Style.RESET_ALL}")
+
+'''@cli.command()
 @click.option('--ai', 'ai_mode', is_flag=True, help='Use AI to generate commit message from diff')
 def commit(ai_mode):
     """Create a conventional commit message
@@ -537,7 +737,7 @@ def commit(ai_mode):
         except subprocess.CalledProcessError as e:
             click.echo(f"❌ Git commit failed: {e}")
     else:
-        click.echo("❌ Commit cancelled")
+        click.echo("❌ Commit cancelled")'''
 
 
 # ============================================================================
