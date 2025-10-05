@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2025-01-04
 
+### Published
+
+https://test.pypi.org/project/devkit-cli/0.1.0/
+https://pypi.org/project/devkit-cli/0.1.0/
+
+## [0.1.0] - 2025-01-04
+
 ### Added
 - **Snippet Tags System**: Add tags to snippets for better organization
 - **Snippet Search**: Search snippets by name, command content, or tags
@@ -20,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Storage Format**: Upgraded snippet storage to support metadata (backward compatible)
 - **Snippet Commands**: Enhanced all snippet commands to work with new format
 - **Project Structure**: Cleaned up directory structure, improved .gitignore
-- **Version**: Bumped to 0.2.0 for feature release
+- **Version**: Bumped to 0.1.0 for feature release
 
 ### Fixed
 - **Code Redundancy**: Removed duplicate snippet commands in main.py

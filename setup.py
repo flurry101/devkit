@@ -36,7 +36,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Tools',
+        'Topic :: Software Development',
         'Topic :: System :: Shells',
         'Topic :: Utilities',
         'License :: OSI Approved :: MIT License',

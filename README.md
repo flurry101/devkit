@@ -38,6 +38,11 @@ Get started in seconds. All you need is Python 3.8+.
 pip install devkit-cli
 ````
 
+Sources:
+- https://pypi.org/project/devkit-cli/0.1.0/
+- https://test.pypi.org/project/devkit-cli/0.1.0/
+
+
 ### 2. Configure Your AI *(Optional, but Recommended)*
 
 To unlock the AI features, you need a free Google AI API key.
