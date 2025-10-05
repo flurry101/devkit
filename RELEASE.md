@@ -35,7 +35,7 @@ Go to `Settings → Environments → New environment`
 
 ```bash
 # Update version
-vim setup.py           # Update version='0.2.0'
+vim setup.py           
 vim devkit/__init__.py # Update __version__
 
 # Update changelog
@@ -68,11 +68,11 @@ ls dist/
 python -m twine upload --repository testpypi dist/*
 
 # Test install
-pip install --index-url https://test.pypi.org/simple/ devkit-cli
+pip install --index-url https://test.pypi.org/project/devkit-cli
 
 # Test commands
 devkit --version
-devkit status
+devkit status" 
 ```
 
 ### 4. Release to PyPI
