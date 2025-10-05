@@ -195,6 +195,17 @@ Made a mistake in production? Panic mode scans for recent dangerous commands (li
 # Something just broke after a command? Run this immediately!
 devkit panic
 ```
+---
+
+
+## 🚀 Future Enhancements
+
+* [ ] **AI-Powered Features**: Auto-comlplete commit messages, debug errors, and suggest commands using AI.
+* [ ] **Real-Time Collaborative Coding**: Pair program directly in the terminal with shared snippets, commands, and real-time suggestions. 
+* [ ] **Self-Healing Terminal**: DevKit automatically detects and fixes errors in commands, missing dependencies, or broken environments. 
+* [ ] **Universal Snippet Cloud**: Share snippets globally and pull in top-rated snippets from the community or company as per best practices of the org.
+* [ ] **Cross-Project Context Switching**: Automatically switch between projects, loading context-specific snippets and environments.
+* [ ] **Automated Security Audits**: Run real-time security audits to detect vulnerabilities in your commands, libraries, and scripts.
 
 ---
 
