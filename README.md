@@ -219,16 +219,18 @@ devkit panic
 
 ## 🚀 Future Enhancements
 
-Here’s a sneak peek at some of the features coming soon:
+Here’s a sneak peek at some of the features planned:
 
+* [ ] **Session-Based Contexts**: Manage multiple sessions across projects — keep your shell history, snippets, and AI context scoped to each task like a boss.
+* [ ] **LSP-Enhanced Intelligence**: Tap into Language Server Protocols for smarter command suggestions and commit messages with deeper code awareness.
 * [ ] **AI-Powered Features**: Auto-comlplete commit messages, debug errors, and suggest commands using AI.
 * [ ] **Real-Time Collaborative Coding**: Pair program directly in the terminal with shared snippets, commands, and real-time suggestions. 
 * [ ] **Self-Healing Terminal**: DevKit automatically detects and fixes errors in commands, missing dependencies, or broken environments. 
 * [ ] **Universal Snippet Cloud**: Share snippets globally and pull in top-rated snippets from the community or company as per best practices of the org.
 * [ ] **Cross-Project Context Switching**: Automatically switch between projects, loading context-specific snippets and environments.
-* [ ] **Automated Security Audits**: Run real-time security audits to detect vulnerabilities in your commands, libraries, and scripts.
+* [ ] **Automated Security Audits**: Run real-time security audits to detect vulnerabilities in your commands based on standard security protocols, libraries, and scripts.
 
-P.S. This list will grow as I learn and build, expect frequent updates 🤞
+P.S. This list will grow as I learn and build, expect updates 🤞
 
 ---
 
