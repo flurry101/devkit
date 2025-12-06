@@ -26,6 +26,9 @@ demo_command() {
     echo ""
     sleep 2
 }
+#0. Intro
+demo_step "0. Intro"
+demo_command "devkit --help"
 
 # 1. Basic Setup
 demo_step "1. Check DevKit Status"

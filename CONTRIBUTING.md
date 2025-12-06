@@ -18,6 +18,7 @@ pytest
 pytest -v  # Verbose
 pytest --cov=devkit  # With coverage
 ```
+Refer [TESTING](TESTING.md) for more details.
 
 ## Submitting Changes
 - Fork the repository  

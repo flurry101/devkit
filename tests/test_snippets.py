@@ -74,9 +74,15 @@ def test_delete_snippet(runner, clean_devkit_dir):
         assert 'test' not in snippets
 
 def test_no_ai_graceful_fallback(runner):
-    # Test that AI commands work when API key IS configured
-    # (Previously this test was checking for failure, but now AI works)
+    # Test that AI commands work gracefully with or without API key
     result = runner.invoke(cli, ['ask', 'how to list files'], input='n\n')  # Say 'no' to saving
     assert result.exit_code == 0
-    # Should either get a command suggestion OR an error message
-    assert ('COMMAND:' in result.output or 'API key not configured' in result.output)
+    # Should either get formatted AI response OR an error message
+    # The formatted output uses Rich markdown, so check for formatted content
+    import re
+    output_clean = re.sub(r'\x1b\[[0-9;]*m', '', result.output)  # Remove ANSI codes
+    assert ('AI Response' in output_clean or 
+            'Suggested Command' in output_clean or
+            'API key not configured' in output_clean or
+            'AI features are not available' in output_clean or
+            'COMMAND:' in output_clean)  # Fallback to old format check

@@ -53,7 +53,7 @@ def show_history(limit: int = 10) -> None:
 def analyze_recent_history() -> None:
     """Analyze recent history with AI to find issues"""
     if not AI_AVAILABLE:
-        click.echo("❌ AI features are not available - anthropic package not installed")
+        click.echo("❌ AI features are not available - google-generativeai package not installed")
         return
         
     history = load_history()
@@ -62,14 +62,17 @@ def analyze_recent_history() -> None:
         click.echo("No command history to analyze yet.")
         return
     
-    click.echo("\n🔍 Analyzing recent commands with AI...\n")
+    # Import display module
+    from . import display
+    
+    # Show loading progress
+    display.show_loading_progress("🔍 Analyzing recent commands with AI")
     
     # Get AI analysis
     analysis = analyze_history(history)
     
-    click.echo("=" * 70)
-    click.echo(analysis)
-    click.echo("=" * 70)
+    # Display with Rich formatting
+    display.display_analysis(analysis, "🔍 AI History Analysis")
 
 
 def find_failures() -> List[Dict[str, Any]]:

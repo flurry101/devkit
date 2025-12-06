@@ -7,6 +7,12 @@ google-generativeai>=0.3.0
 # Terminal colors
 colorama>=0.4.0
 
+# TUI dependencies
+textual
+rich
+terminaltexteffects
+prompt-toolkit>=3.0.0
+
 # Development dependencies
 pytest>=7.0.0
 black>=22.0.0

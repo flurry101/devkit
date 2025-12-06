@@ -133,9 +133,9 @@ def format_analysis_output(analysis: str, patterns: dict) -> str:
     """Format the complete analysis output"""
     output = []
     
-    output.append("\n" + "=" * 70)
+    output.append("\n" + "=" *20)
     output.append("🔍 LOG ANALYSIS RESULTS")
-    output.append("=" * 70 + "\n")
+    output.append("=" * 20 + "\n")
     
     # Quick stats
     output.append("📊 Quick Stats:")

@@ -38,13 +38,15 @@ def ask_command(query: str) -> str:
         
         prompt = f"""You are a terminal command expert. The user wants to: {query}
 
-Respond with ONLY the command they should run, followed by a brief explanation.
+Respond with the command they should run, followed by a detailed explanation.
 
 Format:
 COMMAND: <the actual command>
-EXPLANATION: <brief 1-line explanation>
+EXPLANATION: <detailed explanation breaking down the command, what each part does, and why it works>
+DETAILED_NOTES: <extra notes, tips, common variations, or important considerations - max 100 words>
+CITATIONS: <cite official documentation sources like man pages (e.g., "man find"), official docs (e.g., "GNU Coreutils Documentation"), or relevant official documentation URLs>
 
-Be concise and practical. Assume they're on a Unix-like system (Linux/Mac)."""
+Be concise but thorough. Assume they're on a Unix-like system (Linux/Mac). Reference official documentation when possible."""
         
         response = client.generate_content(prompt)
         return response.text
@@ -78,12 +80,23 @@ def explain_command(command: str) -> str:
         if not client:
             return "❌ API key not configured. Set GEMINI_API_KEY environment variable."
         
-        prompt = f"""Explain this terminal command in simple terms:
+        prompt = f"""Explain this terminal command in detail:
 
 {command}
 
-Break it down part by part and explain what each part does. Be concise but clear.
-If there are any potential risks or important notes, mention them."""
+Provide:
+1. A clear explanation breaking down each part of the command
+2. What each flag/option does
+3. Common use cases
+4. Potential risks or important notes
+5. Official documentation references (man pages, official docs)
+
+Format your response as:
+EXPLANATION: <detailed explanation>
+DETAILED_NOTES: <extra notes, tips, variations - max 100 words>
+CITATIONS: <cite official sources like "man <command>", official documentation URLs, or relevant official docs>
+
+Be thorough but keep explanations clear and practical."""
         
         response = client.generate_content(prompt)
         return response.text

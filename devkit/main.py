@@ -22,10 +22,22 @@ except ImportError:
         RESET_ALL = BRIGHT = DIM = ""
     COLORS_AVAILABLE = False
 
+# Import Rich for enhanced terminal output
+try:
+    from rich.console import Console
+    from rich.text import Text
+    from rich.panel import Panel
+    from rich import box
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+
 # Import our modules
 from . import storage
 from . import time_travel
 from . import rollback
+from . import display
+from . import help_formatter
 
 # Optional AI module
 
@@ -38,22 +50,66 @@ try:
 except ImportError:
     AI_AVAILABLE = False
 
-# Main CLI Group
-@click.group()
-@click.version_option(version="0.1.0")
-def cli():
-    """DevKit - AI-powered terminal assistant for developers
+# Custom help formatter with colors
+class ColoredHelpFormatter(click.HelpFormatter):
+    def write_usage(self, prog, args='', prefix='Usage: '):
+        if RICH_AVAILABLE:
+            console = Console()
+            usage_text = Text()
+            usage_text.append(prefix, style="bold cyan")
+            usage_text.append(prog, style="bold white")
+            if args:
+                usage_text.append(" ", style="white")
+                usage_text.append(args, style="yellow")
+            console.print(usage_text)
+        else:
+            super().write_usage(prog, args, prefix)
     
-    Your companion for terminal operations:
-    - Save and run code snippets
-    - Get AI command suggestions
-    - Write better git commits
-    - Time-travel debugging
-    - Emergency rollback assistance
+    def write_heading(self, heading):
+        if RICH_AVAILABLE:
+            console = Console()
+            console.print(f"\n[bold cyan]{heading}[/bold cyan]")
+        else:
+            super().write_heading(heading)
+    
+    def write_text(self, text):
+        if RICH_AVAILABLE:
+            console = Console()
+            # Parse and colorize the text
+            lines = text.split('\n')
+            for line in lines:
+                if line.strip().startswith('  '):
+                    # Command line
+                    parts = line.split('  ', 1)
+                    if len(parts) > 1:
+                        console.print(f"[bold white]{parts[0]}[/bold white]  [dim]{parts[1]}[/dim]")
+                    else:
+                        console.print(line)
+                else:
+                    console.print(line)
+        else:
+            super().write_text(text)
+
+# Main CLI Group
+@click.group(
+    context_settings={'help_option_names': ['-h', '--help']}
+)
+@click.version_option(version="0.1.0")
+@click.pass_context
+def cli(ctx):
+    """
+    DevKit - AI-powered terminal assistant for developers
     
     Get started: devkit --help
     """
-    pass
+    # Show intro on first use (before any command execution)
+    # This ensures intro shows for ALL commands including --help
+    display.show_intro_once()
+    
+    # Customize help formatting if Rich is available
+    if RICH_AVAILABLE and ctx.invoked_subcommand is None:
+        # This will be handled by the help callback
+        pass
 
 # ============================================================================
 # Snippet Commands
@@ -415,11 +471,17 @@ def logs_analyze(logfile):
         patterns = log_analyzer.extract_error_patterns(log_content)
         context = workspace.get_project_context()
         
-        click.echo(f"{Fore.CYAN}🤖 Analyzing with AI...{Style.RESET_ALL}\n")
+        # Show loading progress
+        display.show_loading_progress("🤖 Analyzing log with AI")
+        
         analysis = log_analyzer.analyze_log_with_ai(log_content, context)
         
+        # Format and display with Rich
         output = log_analyzer.format_analysis_output(analysis, patterns)
-        click.echo(output)
+        
+        # Display with Rich formatting
+        markdown_content = f"# Log Analysis Results\n\n{output}\n\n---\n\n*Source: AI-powered analysis using Google Gemini*"
+        display.display_analysis(markdown_content, "🔍 Log Analysis")
     
     except RuntimeError as e:
         click.echo(f"{Fore.RED}❌ {e}{Style.RESET_ALL}")
@@ -442,10 +504,16 @@ def ask(query):
         return
         
     query_str = ' '.join(query)
-    click.echo(f"\n🤖 Finding command for: {query_str}\n")
     
+    # Show loading progress
+    display.show_loading_progress(f"🤖 Finding command for: {query_str}")
+    
+    # Get AI response
     response = ai.ask_command(query_str)
-    click.echo(response)
+    
+    # Format and display with Rich markdown
+    formatted_response = display.format_ai_response(response, query_str, show_suggestions=True)
+    display.display_ai_output(formatted_response, "💡 AI Command Suggestion")
     
     # Parse response to extract command if possible
     if "COMMAND:" in response:
@@ -456,12 +524,14 @@ def ask(query):
                 if click.confirm(f"\n💾 Save this as a snippet?", default=False):
                     name = click.prompt("Snippet name", type=str)
                     snippets = storage.load_snippets()
-                    snippets[name] = command
+                    snippets[name] = {
+                        'command': command,
+                        'tags': [],
+                        'created': datetime.now().isoformat()
+                    }
                     storage.save_snippets(snippets)
                     click.echo(f"Saved as '{name}'")
                 break
-    
-    click.echo()
 
 
 @cli.command()
@@ -476,14 +546,15 @@ def explain(command):
         return
         
     command_str = ' '.join(command)
-    click.echo(f"\n🔍 Explaining: {command_str}\n")
     
+    # Show loading progress
+    display.show_loading_progress(f"🔍 Explaining: {command_str}")
+    
+    # Get AI explanation
     explanation = ai.explain_command(command_str)
     
-    click.echo("=" * 70)
-    click.echo(explanation)
-    click.echo("=" * 70)
-    click.echo()
+    # Display with Rich formatting and citations
+    display.display_command_explanation(command_str, explanation)
 
 
 # ============================================================================
@@ -528,7 +599,8 @@ def commit(ai_mode, edit, signoff, amend, no_verify):
     commit_msg = None
     
     if ai_mode:
-        click.echo(f"\n{Fore.CYAN}🤖 Generating commit message...{Style.RESET_ALL}\n")
+        # Show loading progress
+        display.show_loading_progress("🤖 Generating commit message from staged changes")
         
         result = subprocess.run(["git", "diff", "--staged"], 
                               capture_output=True, text=True, check=True)
@@ -543,6 +615,10 @@ def commit(ai_mode, edit, signoff, amend, no_verify):
         if commit_msg.startswith("❌"):
             click.echo(commit_msg)
             return
+        
+        # Display AI-generated commit message with formatting
+        markdown_content = f"# AI-Generated Commit Message\n\n## Suggested Message\n\n```\n{commit_msg}\n```\n\n---\n\n*Source: AI-powered analysis using Google Gemini*"
+        display.display_ai_output(markdown_content, "💡 Commit Message Suggestion")
     else:
         # Interactive mode
         click.echo(f"\n{Fore.CYAN}📝 Conventional Commit Helper{Style.RESET_ALL}\n")
@@ -842,40 +918,140 @@ def config(api_key):
 @cli.command()
 def status():
     """Show DevKit status and statistics"""
-    click.echo("\n📊 DevKit Status")
-    click.echo("=" * 70)
-    
-    # Snippets
+    # Gather status information first
     snippets = storage.load_snippets()
-    click.echo(f"\n📝 Snippets: {len(snippets)} saved")
-    
-    # History
     history = storage.load_history()
-    click.echo(f"⏰ Command History: {len(history)} commands logged")
+    dangerous = rollback.find_recent_dangerous_commands()
+    api_key = storage.get_api_key()
     
     if history:
         failures = [h for h in history if h['exit_code'] != 0]
-        click.echo(f"   - Successful: {len(history) - len(failures)}")
-        click.echo(f"   - Failed: {len(failures)}")
-    
-    # Dangerous commands
-    dangerous = rollback.find_recent_dangerous_commands()
-    click.echo(f"⚠️  Recent Dangerous Commands: {len(dangerous)}")
-    
-    # API status
-    api_key = storage.get_api_key()
-    if api_key:
-        click.echo(f"🤖 AI Features: ✅ Enabled (API key configured)")
+        success_count = len(history) - len(failures)
+        failed_count = len(failures)
     else:
-        click.echo(f"🤖 AI Features: ❌ Disabled (no API key)")
-        click.echo("   Set API key: devkit config --api-key <key>")
+        success_count = 0
+        failed_count = 0
     
-    click.echo("\n" + "=" * 70 + "\n")
+    # Use BinaryPath effect for status display
+    try:
+        from terminaltexteffects.effects.effect_binarypath import BinaryPath
+        
+        status_text = f"""📊 DevKit Status
+
+📝 Snippets: {len(snippets)} saved
+⏰ Command History: {len(history)} commands logged
+   - Successful: {success_count}
+   - Failed: {failed_count}
+⚠️  Recent Dangerous Commands: {len(dangerous)}
+🤖 AI Features: {'✅ Enabled (API key configured)' if api_key else '❌ Disabled (no API key)'}"""
+        
+        effect = BinaryPath(status_text)
+        with effect.terminal_output() as terminal:
+            for frame in effect:
+                terminal.print(frame)
+                import time
+                time.sleep(0.01)
+    except ImportError:
+        # Fallback to regular display
+        click.echo("\n📊 DevKit Status")
+        click.echo("=" * 70)
+        
+        # Snippets
+        snippets = storage.load_snippets()
+        click.echo(f"\n📝 Snippets: {len(snippets)} saved")
+        
+        # History
+        history = storage.load_history()
+        click.echo(f"⏰ Command History: {len(history)} commands logged")
+        
+        if history:
+            failures = [h for h in history if h['exit_code'] != 0]
+            click.echo(f"   - Successful: {len(history) - len(failures)}")
+            click.echo(f"   - Failed: {len(failures)}")
+        
+        # Dangerous commands
+        dangerous = rollback.find_recent_dangerous_commands()
+        click.echo(f"⚠️  Recent Dangerous Commands: {len(dangerous)}")
+        
+        # API status
+        api_key = storage.get_api_key()
+        if api_key:
+            click.echo(f"🤖 AI Features: ✅ Enabled (API key configured)")
+        else:
+            click.echo(f"🤖 AI Features: ❌ Disabled (no API key)")
+            click.echo("   Set API key: devkit config --api-key <key>")
+        
+        click.echo("\n" + "=" * 70 + "\n")
+    except Exception as e:
+        # Fallback on any error
+        click.echo(f"\n📊 DevKit Status\n")
+        click.echo(f"Error displaying status: {e}\n")
+
+
 
 
 # ============================================================================
 # Utility Commands
 # ============================================================================
+
+@cli.command()
+def about():
+    """Show DevKit about information with animated intro"""
+    # Show animated intro using TerminalTextEffects
+    display.show_intro_once()
+    
+    # Additional about information
+    if RICH_AVAILABLE:
+        console = Console()
+        about_text = """
+# About DevKit
+
+**Version:** 0.1.0
+
+**Description:**
+DevKit is your smart companion for the command line. It helps you find the right commands 
+without leaving your terminal, manage and reuse helpful snippets, write perfect git commits, 
+and even turn back time when things go wrong.
+
+**Key Features:**
+- 🤖 AI-powered command suggestions
+- 📝 Snippet management
+- 🔍 Command explanations with citations
+- ⏰ Time-travel debugging
+- 🚨 Emergency rollback assistance
+- 📊 Log analysis
+
+**Get Started:**
+- `devkit ask "your question"` - Get AI command suggestions
+- `devkit explain <command>` - Understand any command
+- `devkit snippet save <name> <command>` - Save useful commands
+- `devkit commit --ai` - Generate commit messages
+- `devkit --help` - See all commands
+
+**Documentation:**
+Visit the repository for more information and examples.
+"""
+        from rich.markdown import Markdown
+        from rich.panel import Panel
+        from rich import box
+        
+        markdown = Markdown(about_text)
+        panel = Panel(
+            markdown,
+            title="[bold cyan]About DevKit[/bold cyan]",
+            border_style="cyan",
+            box=box.ROUNDED
+        )
+        console.print(panel)
+    else:
+        click.echo("\n" + "=" * 70)
+        click.echo("About DevKit")
+        click.echo("=" * 70)
+        click.echo("\nVersion: 0.1.0")
+        click.echo("\nDevKit is your smart companion for the command line.")
+        click.echo("Use 'devkit --help' to see all available commands.\n")
+        click.echo("=" * 70 + "\n")
+
 
 @cli.command()
 @click.confirmation_option(prompt='Clear all command history?')
@@ -888,6 +1064,24 @@ def clear():
 # ============================================================================
 # Entry Point
 # ============================================================================
+
+# Hook into Click's help system for colored output
+original_format_help = click.Command.format_help
+
+def format_help_with_colors(self, ctx, formatter):
+    """Custom help formatter with colors"""
+    # Show intro first (for all help displays)
+    display.show_intro_once()
+    
+    # Try Rich formatting first
+    if help_formatter.format_help_text(ctx, formatter):
+        return
+    
+    # Fallback to default
+    return original_format_help(self, ctx, formatter)
+
+# Monkey patch Click's help formatter
+click.Command.format_help = format_help_with_colors
 
 if __name__ == '__main__':
     cli()
