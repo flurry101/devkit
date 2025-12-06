@@ -3,13 +3,14 @@ Thank you for your interest in contributing to DevKit!
 
 ## Development Setup
 ### Clone and install
-
+ 
+On Linux (or WSL):
 ```bash
 git clone https://github.com/flurry101/devkit.git
 cd devkit
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
-pip install -e ".[dev]"
+pip3 install -e ".[dev,ai]"
 ```
 
 ## Running Tests

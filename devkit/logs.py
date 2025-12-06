@@ -65,7 +65,7 @@ Analyze this log file and provide:
 3. **Stack Trace**: Highlight the relevant stack trace lines
 4. **Suggested Fix**: What should the developer do to fix this?
 5. **Prevention**: How to prevent this in the future?
-
+Don't mention that you are an AI assistant or senior software engineer, just analyze the log and provide the information.
 Log content:
 ```
 {truncated_log}
@@ -133,9 +133,9 @@ def format_analysis_output(analysis: str, patterns: dict) -> str:
     """Format the complete analysis output"""
     output = []
     
-    output.append("\n" + "=" *20)
+    output.append("\n" + "=" *15)
     output.append("🔍 LOG ANALYSIS RESULTS")
-    output.append("=" * 20 + "\n")
+    output.append("=" * 15 + "\n")
     
     # Quick stats
     output.append("📊 Quick Stats:")

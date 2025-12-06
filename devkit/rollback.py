@@ -66,16 +66,18 @@ def show_panic_mode() -> None:
     
     # Ask AI for rollback suggestions if available
     if AI_AVAILABLE and click.confirm("\n🤖 Get AI-powered rollback suggestions?", default=True):
-        click.echo("\n🔍 Analyzing and generating rollback steps...\n")
+        # Import display module
+        from . import display
         
+        # Show loading progress
+        display.show_loading_progress("🔍 Analyzing and generating rollback steps")
+        
+        # Get AI suggestions
         suggestions = suggest_rollback(dangerous)
         
-        click.echo("=" * 70)
-        click.echo(suggestions)
-        click.echo("=" * 70)
-        
-        click.echo("\n⚠️  WARNING: Review these suggestions carefully before running!")
-        click.echo("Always test rollback in staging first if possible.\n")
+        # Format and display with Rich formatting
+        formatted_suggestions = f"# Rollback Suggestions\n\n{suggestions}\n\n---\n\n*Source: AI-powered analysis using Google Gemini*\n*⚠️ WARNING: Review these suggestions carefully before running!*\n*Always test rollback in staging first if possible.*"
+        display.display_analysis(formatted_suggestions, "🚨 Emergency Rollback Suggestions")
     else:
         click.echo("\nℹ️  AI-powered analysis not available. Using built-in patterns:")
         for entry in dangerous:

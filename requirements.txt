@@ -11,7 +11,7 @@ colorama>=0.4.0
 textual
 rich
 terminaltexteffects
-prompt-toolkit>=3.0.0
+prompt-toolkit
 
 # Development dependencies
 pytest>=7.0.0

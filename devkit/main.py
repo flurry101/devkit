@@ -92,7 +92,10 @@ class ColoredHelpFormatter(click.HelpFormatter):
 
 # Main CLI Group
 @click.group(
-    context_settings={'help_option_names': ['-h', '--help']}
+    context_settings={
+        'help_option_names': ['-h', '--help'],
+        'auto_envvar_prefix': 'DEVKIT'
+    }
 )
 @click.version_option(version="0.1.0")
 @click.pass_context
@@ -102,9 +105,9 @@ def cli(ctx):
     
     Get started: devkit --help
     """
-    # Show intro on first use (before any command execution)
-    # This ensures intro shows for ALL commands including --help
+    # show intro here once only
     display.show_intro_once()
+    # Intro will be shown explicitly in the 'about' command
     
     # Customize help formatting if Rich is available
     if RICH_AVAILABLE and ctx.invoked_subcommand is None:
@@ -932,7 +935,7 @@ def status():
         success_count = 0
         failed_count = 0
     
-    # Use BinaryPath effect for status display
+    # Use BinaryPath effect for status display (ALWAYS, every time status is run)
     try:
         from terminaltexteffects.effects.effect_binarypath import BinaryPath
         
@@ -945,6 +948,7 @@ def status():
 ⚠️  Recent Dangerous Commands: {len(dangerous)}
 🤖 AI Features: {'✅ Enabled (API key configured)' if api_key else '❌ Disabled (no API key)'}"""
         
+        # Always use BinaryPath effect for status
         effect = BinaryPath(status_text)
         with effect.terminal_output() as terminal:
             for frame in effect:
@@ -997,8 +1001,25 @@ def status():
 @cli.command()
 def about():
     """Show DevKit about information with animated intro"""
+    # Force show animated intro using TerminalTextEffects (always show for 'about')
+    # Reset intro state to show it again
+    config = storage.load_config()
+    old_intro_shown = config.get('intro_shown', False)
+    config['intro_shown'] = False
+    storage.save_config(config)
+    
+    # Reset global flag
+    import devkit.display as display_module
+    display_module._intro_shown = False
+    
     # Show animated intro using TerminalTextEffects
     display.show_intro_once()
+    
+    # Restore the original state (so it doesn't show again on other commands)
+    if old_intro_shown:
+        config['intro_shown'] = True
+        storage.save_config(config)
+        display_module._intro_shown = True
     
     # Additional about information
     if RICH_AVAILABLE:
@@ -1070,9 +1091,7 @@ original_format_help = click.Command.format_help
 
 def format_help_with_colors(self, ctx, formatter):
     """Custom help formatter with colors"""
-    # Show intro first (for all help displays)
-    display.show_intro_once()
-    
+    # Don't show intro for --help, only for 'about' command
     # Try Rich formatting first
     if help_formatter.format_help_text(ctx, formatter):
         return

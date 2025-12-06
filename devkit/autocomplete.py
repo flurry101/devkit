@@ -42,7 +42,9 @@ def create_completer(context=""):
     
     # Add snippet names if in snippet context
     if 'snippet' in context.lower():
-        completions.extend(get_snippet_completions())
+        snippet_names = get_snippet_completions()
+        if snippet_names:
+            completions.extend(snippet_names)
     
     return WordCompleter(completions, ignore_case=True)
 

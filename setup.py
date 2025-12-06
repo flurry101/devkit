@@ -1,7 +1,22 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        # Install completion automatically
+        try:
+            from devkit.install_completion import install_completion
+            install_completion()
+        except Exception:
+            # Don't fail installation if completion setup fails
+            pass
+
 
 setup(
     name='devkit-cli',
@@ -17,7 +32,7 @@ setup(
         'click>=8.0.0',
         'colorama>=0.4.0',
         'rich>=13.0.0',
-        'terminaltexteffects>=1.0.0',
+        'terminaltexteffects',
         'prompt-toolkit>=3.0.0',
     ],
     extras_require={
@@ -33,6 +48,16 @@ setup(
     entry_points={
         'console_scripts': [
             'devkit=devkit.main:cli',
+        ],
+    },
+    cmdclass={
+        'install': PostInstallCommand,
+    },
+    include_package_data=True,
+    package_data={
+        'devkit': [
+            '_bash_completion.sh',
+            '_zsh_completion.sh',
         ],
     },
     python_requires='>=3.8',

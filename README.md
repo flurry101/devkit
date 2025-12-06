@@ -61,7 +61,26 @@ Sources:
 - https://test.pypi.org/project/devkit-cli/0.1.0/
 
 
-### 2. Configure Your AI *(Optional, but Recommended)*
+### 2. Autocomplete *(Automatic - No Setup Required!)*
+
+tab completion is **automatically installed** when you install the package! 
+**just restart your terminal** after installation, and tab completion will work:
+
+```bash
+# After installing, restart terminal, then try:
+devkit <TAB>              # Shows all commands
+devkit s<TAB>             # Suggests "status" or "snippet"  
+devkit snippet g<TAB>     # Suggests "get" (partial matching!)
+devkit snippet run <TAB>  # Shows all saved snippet names
+```
+
+**Features:**
+- **Automatic installation** - No manual setup needed
+- **Partial matching** - Type "g" and it suggests "get"
+- **Smart suggestions** - Context-aware completions
+- **Works in Bash and Zsh** - Automatically detects your shell
+
+### 3. Configure Your AI *(Optional, but Recommended)*
 
 For full AI awesomeness, you’ll need a free Google AI API key. Grab one from Google AI Studio.
 
